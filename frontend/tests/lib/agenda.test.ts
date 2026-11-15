@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { addMonths, currentMonth, groupByDay, monthLabel, monthRange } from '@/lib/agenda'
+import { addMonths, currentMonth, groupByDay, monthLabel, monthRange, todayIso } from '@/lib/agenda'
 import { toCultEvent } from '@/services/catalog'
 import { apiEvent } from '@tests/fixtures/catalog'
 
@@ -8,6 +8,10 @@ describe('agenda', () => {
     expect(currentMonth(new Date(2026, 10, 12))).toEqual({ year: 2026, month: 10 })
     expect(addMonths({ year: 2026, month: 11 }, 1)).toEqual({ year: 2027, month: 0 })
     expect(addMonths({ year: 2026, month: 0 }, -1)).toEqual({ year: 2025, month: 11 })
+  })
+
+  it('escreve a data local de hoje no formato da API', () => {
+    expect(todayIso(new Date(2026, 0, 5, 23, 30))).toBe('2026-01-05')
   })
 
   it('monta o período do mês no formato da API, inclusive em fevereiro bissexto', () => {
