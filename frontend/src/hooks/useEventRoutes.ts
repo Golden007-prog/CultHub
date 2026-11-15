@@ -30,17 +30,20 @@ function wait(ms: number, signal: AbortSignal) {
   })
 }
 
-async function withRetry<T>(load: () => Promise<T>, signal: AbortSignal): Promise<T> {
-  for (const delay of RETRY_DELAYS_MS) {
-    try {
-      return await load()
-    } catch (error) {
-      const busy = error instanceof ApiError && error.status === 502
-      if (!busy || signal.aborted) throw error
-      await wait(delay, signal)
-    }
+async function withRetry<T>(
+  load: () => Promise<T>,
+  signal: AbortSignal,
+  delays = RETRY_DELAYS_MS,
+): Promise<T> {
+  try {
+    return await load()
+  } catch (error) {
+    const [delay, ...remaining] = delays
+    const busy = error instanceof ApiError && error.status === 502
+    if (!busy || delay === undefined || signal.aborted) throw error
+    await wait(delay, signal)
+    return withRetry(load, signal, remaining)
   }
-  return load()
 }
 
 export interface EventRoutesResult {
