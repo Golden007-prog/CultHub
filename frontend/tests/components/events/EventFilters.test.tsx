@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import EventFilters from '@/components/events/EventFilters'
 
 function LocationSearch() {
@@ -22,6 +22,16 @@ function renderFilters(route = '/') {
 }
 
 describe('EventFilters', () => {
+  beforeEach(() => {
+    // As datas dos testes são de dezembro de 2026; sem fixar o dia, passariam a ser "datas passadas".
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date(2026, 10, 15))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('inicia com todas as categorias e qualquer preço selecionados', () => {
     renderFilters()
     for (const label of ['Música', 'Festivais', 'Teatro', 'Esportes', 'Artes']) {
@@ -92,6 +102,18 @@ describe('EventFilters', () => {
     expect(screen.getByLabelText('Até')).toHaveAttribute('aria-invalid', 'true')
     expect(screen.getByRole('button', { name: 'Aplicar filtros' })).toBeDisabled()
     expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('não aceita datas passadas, que sempre dariam lista vazia', async () => {
+    const { user } = renderFilters()
+    expect(screen.getByLabelText('De')).toHaveAttribute('min', '2026-11-15')
+    expect(screen.getByLabelText('Até')).toHaveAttribute('min', '2026-11-15')
+
+    await user.type(screen.getByLabelText('De'), '2026-10-01')
+    expect(screen.getByRole('alert')).toHaveTextContent('Escolha uma data a partir de hoje.')
+    expect(screen.getByLabelText('De')).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText('Até')).not.toHaveAttribute('aria-invalid')
+    expect(screen.getByRole('button', { name: 'Aplicar filtros' })).toBeDisabled()
   })
 
   it('Limpar e aplicar remove o período da URL', async () => {

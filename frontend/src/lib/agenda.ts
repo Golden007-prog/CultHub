@@ -15,6 +15,11 @@ export interface AgendaDay {
 
 const pad = (value: number) => String(value).padStart(2, '0')
 
+/** Data local de hoje no formato da API (AAAA-MM-DD); `toISOString` daria a data em UTC. */
+export function todayIso(now = new Date()): string {
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+}
+
 export function currentMonth(today = new Date()): Month {
   return { year: today.getFullYear(), month: today.getMonth() }
 }

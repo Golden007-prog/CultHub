@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { todayIso } from '@/lib/agenda'
 import { categories, categoryOrder } from '@/lib/categories'
 import { paths } from '@/lib/paths'
 import { cn } from '@/lib/utils'
@@ -37,8 +38,17 @@ export default function EventFilters({ onClose }: Readonly<EventFiltersProps>) {
   const [price, setPrice] = useState<PriceMode>(initialPriceMode)
   const [from, setFrom] = useState(searchParams.get('de') ?? '')
   const [to, setTo] = useState(searchParams.get('ate') ?? '')
-  // Digitando a data, dá para passar por cima do min/max do campo.
-  const invalidPeriod = Boolean(from && to && from > to)
+  const today = todayIso()
+  // Digitando a data, dá para passar por cima do min/max do campo. Datas passadas sempre dariam lista
+  // vazia, porque o catálogo já esconde os eventos encerrados.
+  let periodError: { field: 'de' | 'ate'; message: string } | null = null
+  if (from && from < today) periodError = { field: 'de', message: 'Escolha uma data a partir de hoje.' }
+  else if (to && to < today) periodError = { field: 'ate', message: 'Escolha uma data a partir de hoje.' }
+  else if (from && to && from > to)
+    periodError = { field: 'ate', message: 'A data final não pode ser anterior à inicial.' }
+  const invalidPeriod = periodError !== null
+  const errorProps = (field: 'de' | 'ate') =>
+    periodError?.field === field ? { 'aria-invalid': true, 'aria-describedby': 'filtro-periodo-erro' } : {}
 
   function toggleCategory(id: CategoryId, checked: boolean) {
     setSelected((current) => {
@@ -113,6 +123,7 @@ export default function EventFilters({ onClose }: Readonly<EventFiltersProps>) {
 
       <fieldset className="mt-4">
         <legend className="mb-2 text-xs font-bold">Período</legend>
+        <p className="-mt-1 mb-2 text-2xs text-muted-foreground">Só eventos de hoje em diante.</p>
         <div className="grid grid-cols-2 gap-2">
           <div className="grid gap-1">
             <Label htmlFor="filtro-de" className="text-xs font-normal">
@@ -122,8 +133,10 @@ export default function EventFilters({ onClose }: Readonly<EventFiltersProps>) {
               id="filtro-de"
               type="date"
               value={from}
+              min={today}
               max={to || undefined}
               onChange={(event) => setFrom(event.target.value)}
+              {...errorProps('de')}
               className="min-h-9 py-2"
             />
           </div>
@@ -135,17 +148,16 @@ export default function EventFilters({ onClose }: Readonly<EventFiltersProps>) {
               id="filtro-ate"
               type="date"
               value={to}
-              min={from || undefined}
+              min={from || today}
               onChange={(event) => setTo(event.target.value)}
-              aria-invalid={invalidPeriod}
-              aria-describedby={invalidPeriod ? 'filtro-periodo-erro' : undefined}
+              {...errorProps('ate')}
               className="min-h-9 py-2"
             />
           </div>
         </div>
-        {invalidPeriod && (
+        {periodError && (
           <p id="filtro-periodo-erro" role="alert" className="mt-1.5 text-xs text-destructive">
-            A data final não pode ser anterior à inicial.
+            {periodError.message}
           </p>
         )}
       </fieldset>
