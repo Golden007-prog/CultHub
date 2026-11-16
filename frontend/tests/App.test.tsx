@@ -37,6 +37,8 @@ describe('rotas', () => {
     [paths.eventOrigin(id), 'Como chegar'],
     [paths.eventRoute(id), 'Como chegar'],
     [paths.signIn, 'Seu próximo encontro com a cultura começa aqui.'],
+    [paths.recoverPassword, 'Esqueceu sua senha?'],
+    [paths.resetPassword('user-id', 'reset-token'), 'Crie uma nova senha'],
     [paths.account, 'Minha conta'],
     ['/nao-existe', 'Página não encontrada'],
   ])('%s abre a página certa', async (route, title) => {

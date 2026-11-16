@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react'
 import { useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import BackLink from '@/components/common/BackLink'
 import CategoryDot from '@/components/common/CategoryDot'
 import Eyebrow from '@/components/common/Eyebrow'
@@ -25,8 +25,12 @@ function errorText(error: unknown): string {
 export default function SignIn() {
   useDocumentTitle('Entrar ou criar conta | CultHub')
   const { signIn, signUp, user } = useAuth()
+  const location = useLocation()
   const navigate = useNavigate()
-  const [loginMessage, setLoginMessage] = useState('')
+  const passwordReset = (location.state as { passwordReset?: boolean } | null)?.passwordReset
+  const [loginMessage, setLoginMessage] = useState(
+    passwordReset ? 'Senha alterada. Entre com sua nova senha.' : '',
+  )
   const [signupMessage, setSignupMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -119,7 +123,9 @@ export default function SignIn() {
                 <input id="lembrar" name="lembrar" type="checkbox" className={checkboxClass} />
                 <span>Lembrar de mim</span>
               </label>
-              <span className="text-xs text-muted-foreground">Recuperação de senha indisponível</span>
+              <Link to={paths.recoverPassword} className="text-xs text-maroon underline">
+                Esqueci minha senha
+              </Link>
             </div>
             <Button type="submit" block disabled={submitting}>
               Entrar <ArrowRight />

@@ -98,6 +98,14 @@ export const api = {
         lembrar: data.remember,
       }),
     signOut: () => apiRequest<void>('/auth/sair/', 'POST'),
+    requestPasswordReset: (email: string) =>
+      apiRequest<{ detail: string }>('/auth/recuperar-senha/', 'POST', { email }),
+    resetPassword: (data: { uid: string; token: string; password: string }) =>
+      apiRequest<{ detail: string }>('/auth/redefinir-senha/', 'POST', {
+        uid: data.uid,
+        token: data.token,
+        senha: data.password,
+      }),
     currentUser: () => apiRequest<ProfileResponse>('/eu/'),
   },
 

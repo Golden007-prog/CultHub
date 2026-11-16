@@ -101,6 +101,28 @@ describe('api', () => {
     expect(info).not.toHaveBeenCalled()
   })
 
+  it('envia os dados de recuperação e redefinição de senha ao backend', async () => {
+    await api.auth.requestPasswordReset('voce@exemplo.com')
+    await api.auth.resetPassword({
+      uid: 'user-id',
+      token: 'reset-token',
+      password: 'nova-senha-1234',
+    })
+
+    expect(fetchMock.mock.calls.map(([url, options]) => [url, (options as RequestInit).method])).toEqual([
+      ['/api/auth/recuperar-senha/', 'POST'],
+      ['/api/auth/redefinir-senha/', 'POST'],
+    ])
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body as string)).toEqual({
+      email: 'voce@exemplo.com',
+    })
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body as string)).toEqual({
+      uid: 'user-id',
+      token: 'reset-token',
+      senha: 'nova-senha-1234',
+    })
+  })
+
   it('transforma erros de validação do backend em mensagens legíveis', async () => {
     fetchMock.mockImplementationOnce(() =>
       Promise.resolve(

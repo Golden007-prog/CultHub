@@ -1,8 +1,10 @@
-import { screen, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import SignIn from '@/pages/SignIn'
 import { api } from '@/services/api'
 import type { ProfileResponse } from '@/services/api'
+import { AuthTestProvider } from '@tests/auth'
 import { renderWithRouter } from '@tests/render'
 
 const profile: ProfileResponse = {
@@ -20,9 +22,26 @@ describe('SignIn', () => {
     vi.restoreAllMocks()
   })
 
-  it('informa que recuperação de senha ainda não está disponível', () => {
+  it('exibe o link para recuperar a senha', () => {
     renderWithRouter(<SignIn />, { authUser: null })
-    expect(screen.getByText('Recuperação de senha indisponível')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Esqueci minha senha' })).toHaveAttribute(
+      'href',
+      '/recuperar-senha',
+    )
+  })
+
+  it('confirma que a senha foi alterada ao voltar para o login', () => {
+    render(
+      <AuthTestProvider initialUser={null}>
+        <MemoryRouter initialEntries={[{ pathname: '/entrar', state: { passwordReset: true } }]}>
+          <Routes>
+            <Route path="/entrar" element={<SignIn />} />
+          </Routes>
+        </MemoryRouter>
+      </AuthTestProvider>,
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Senha alterada. Entre com sua nova senha.')
   })
 
   it('Entrar envia e-mail, senha e "lembrar de mim"', async () => {
