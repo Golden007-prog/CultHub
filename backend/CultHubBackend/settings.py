@@ -82,6 +82,7 @@ INSTALLED_APPS = [
     "agenda",
     "clima",
     "rotas",
+    "comentarios",
 ]
 
 MIDDLEWARE = [
@@ -154,12 +155,17 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "endereco": "60/min",
         "rota": "30/min",
+        "comentario": "20/min",
     },
     # IP do throttle = o da conexão, nunca o X-Forwarded-For (o cliente
     # poderia inventar um a cada pedido). Atrás de proxy reverso, usar o
     # número de proxies na frente do Django.
     "NUM_PROXIES": 0,
 }
+
+# Níveis de resposta nos comentários: 1 = só respostas diretas (como no
+# YouTube). Aumentar libera respostas em árvore sem mudar o resto.
+COMENTARIOS_PROFUNDIDADE_MAXIMA = 1
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "CultHub API",
