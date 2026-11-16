@@ -31,7 +31,7 @@ src/
 │   ├── events/      EventCard, FeaturedCarousel, EventFilters, CommentItem...
 │   └── weather/     WeatherCard, WeatherStrip, WeatherStats
 ├── pages/           uma página por rota
-├── data/            dados demonstrativos de perfil, comentários e clima
+├── data/            dados demonstrativos de perfil e clima
 ├── types/           tipos compartilhados (CultEvent, User, CategoryId...)
 ├── hooks/           leitura de dados (useEvents, useCurrentUser...), useActiveSection e useDocumentTitle
 ├── lib/             rotas (paths), filtros, cn() e outras funções auxiliares
@@ -58,7 +58,7 @@ Os componentes de `ui/` devem ser usados diretamente (`import { Button } from '@
 
 O catálogo consome o backend Django pelos endpoints `/api/eventos/`, `/api/eventos/{uuid}/` e `/api/categorias/`. Busca e filtros são mantidos na URL (`q`, `categorias` e `preco`) e a listagem respeita a paginação da API. O Vite encaminha `/api` para `localhost:8000`; no Docker, `API_PROXY_TARGET` aponta para o serviço `backend`.
 
-- **Ações ainda demonstrativas** (login, perfil, salvar evento, comentários, clima e geolocalização) usam dados locais ou registram ações no console. Elas ainda não fazem parte da integração do catálogo.
+- **Ações ainda demonstrativas** (login, perfil, salvar evento, clima e geolocalização) usam dados locais ou registram ações no console. Elas ainda não fazem parte da integração do catálogo.
 - **Ações do próprio navegador** (pedir localização, compartilhar, abrir o app de mapas...) usam `logDemoAction`, de `src/lib/demo.ts`, e aparecem como `[CultHub demo] ...`.
 
 Para desenvolver com os dois serviços, rode `docker compose up --build` na raiz do projeto. O frontend ficará em `http://localhost:5173` e o backend em `http://localhost:8000`.
@@ -80,7 +80,7 @@ As URLs são definidas apenas em `src/lib/paths.ts`. Nos links, use `paths` em v
 <Link to={paths.event(event.id)}>...</Link>
 ```
 
-Eventos retornados pelo catálogo têm páginas de detalhes. Os dados de exemplo continuam sendo usados nas áreas ainda não conectadas, como perfil salvo, comentários e clima.
+Eventos retornados pelo catálogo têm páginas de detalhes. Os dados de exemplo continuam sendo usados nas áreas ainda não conectadas, como perfil salvo e clima.
 
 ## Rota até o evento
 
