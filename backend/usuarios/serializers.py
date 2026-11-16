@@ -80,3 +80,20 @@ class EntrarSerializer(serializers.Serializer):
             raise serializers.ValidationError("E-mail ou senha inválidos.")
         dados["usuario"] = usuario
         return dados
+
+
+class RecuperarSenhaSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+    def validate_email(self, email):
+        return Usuario.normalize_username(email)
+
+
+class RedefinirSenhaSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    senha = serializers.CharField(write_only=True)
+
+    def validate_senha(self, senha):
+        validate_password(senha)
+        return senha

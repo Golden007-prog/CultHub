@@ -4,6 +4,8 @@ import { generatePath } from 'react-router-dom'
 export const routes = {
   home: '/',
   signIn: '/entrar',
+  recoverPassword: '/recuperar-senha',
+  resetPassword: '/redefinir-senha/:uid/:token',
   account: '/conta',
   event: '/eventos/:id',
   eventOrigin: '/eventos/:id/origem',
@@ -14,6 +16,8 @@ export const routes = {
 export const paths = {
   home: routes.home,
   signIn: routes.signIn,
+  recoverPassword: routes.recoverPassword,
+  resetPassword: (uid: string, token: string) => generatePath(routes.resetPassword, { uid, token }),
   account: routes.account,
   event: (id: string) => generatePath(routes.event, { id }),
   /** `search` (ver lib/origin) leva a origem escolhida entre as páginas "Como chegar". */

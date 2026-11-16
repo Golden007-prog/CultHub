@@ -1,3 +1,7 @@
+from django.core import mail
+from django.test import override_settings
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 from rest_framework.test import APIClient, APITestCase
 
 from usuarios.models import Usuario
@@ -127,6 +131,91 @@ class EntrarSairTest(APITestCase):
 
     def test_sair_sem_login(self):
         self.assertEqual(self.client.post("/api/auth/sair/").status_code, 403)
+
+
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    FRONTEND_URL="https://culthub.test",
+)
+class RecuperacaoSenhaTest(APITestCase):
+    recuperar_url = "/api/auth/recuperar-senha/"
+    redefinir_url = "/api/auth/redefinir-senha/"
+
+    def setUp(self):
+        self.usuario = Usuario.objects.create_user(
+            "livia@exemplo.com", "senha-atual-1234", nome="Lívia Costa"
+        )
+        mail.outbox = []
+
+    def solicitar(self, email="livia@exemplo.com"):
+        return self.client.post(
+            self.recuperar_url, {"email": email}, format="json"
+        )
+
+    def test_envia_link_e_token_permite_trocar_a_senha_uma_vez(self):
+        resposta = self.solicitar()
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(
+            resposta.json()["detail"],
+            (
+                "Se o e-mail estiver cadastrado, enviaremos um link "
+                "de recuperação."
+            ),
+        )
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [self.usuario.email])
+        corpo = mail.outbox[0].body
+        self.assertIn("https://culthub.test/redefinir-senha/", corpo)
+        link = corpo.split("/redefinir-senha/")[1].splitlines()[0]
+        uid, token = link.split("/")
+
+        redefinicao = self.client.post(
+            self.redefinir_url,
+            {"uid": uid, "token": token, "senha": "nova-senha-5678"},
+            format="json",
+        )
+        self.assertEqual(redefinicao.status_code, 200)
+        self.usuario.refresh_from_db()
+        self.assertTrue(self.usuario.check_password("nova-senha-5678"))
+
+        reutilizado = self.client.post(
+            self.redefinir_url,
+            {"uid": uid, "token": token, "senha": "outra-senha-5678"},
+            format="json",
+        )
+        self.assertEqual(reutilizado.status_code, 400)
+        self.assertTrue(self.usuario.check_password("nova-senha-5678"))
+
+    def test_email_desconhecido_recebe_resposta_generica_sem_email(self):
+        resposta = self.solicitar("nao-existe@exemplo.com")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(
+            resposta.json()["detail"],
+            (
+                "Se o e-mail estiver cadastrado, enviaremos um link "
+                "de recuperação."
+            ),
+        )
+        self.assertEqual(mail.outbox, [])
+
+    def test_token_invalido_e_senha_curta_sao_rejeitados(self):
+        uid = urlsafe_base64_encode(force_bytes(self.usuario.pk))
+        dados = {
+            "uid": uid,
+            "token": "token-invalido",
+            "senha": "nova-senha-5678",
+        }
+        invalido = self.client.post(self.redefinir_url, dados, format="json")
+        curta = self.client.post(
+            self.redefinir_url,
+            {**dados, "senha": "curta"},
+            format="json",
+        )
+        self.assertEqual(invalido.status_code, 400)
+        self.assertIn("detail", invalido.json())
+        self.assertEqual(curta.status_code, 400)
+        self.assertIn("senha", curta.json())
+        self.assertTrue(self.usuario.check_password("senha-atual-1234"))
 
 
 class CsrfTest(APITestCase):

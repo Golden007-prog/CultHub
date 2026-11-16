@@ -1,17 +1,25 @@
-from django.contrib.auth import login, logout
+from django.conf import settings
+from django.contrib.auth import get_user_model, login, logout
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
 from django.utils.decorators import method_decorator
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from usuarios.serializers import (
     CadastroSerializer,
     EntrarSerializer,
     PerfilSerializer,
+    RecuperarSenhaSerializer,
+    RedefinirSenhaSerializer,
 )
 
 
@@ -65,6 +73,88 @@ class EntrarView(APIView):
         lembrar = serializer.validated_data["lembrar"]
         request.session.set_expiry(None if lembrar else 0)
         return Response(PerfilSerializer(usuario).data)
+
+
+class RecuperarSenhaView(APIView):
+    """Envia link de redefinição sem revelar se o e-mail tem cadastro."""
+
+    permission_classes = (AllowAny,)
+    throttle_classes = (ScopedRateThrottle,)
+    throttle_scope = "password_reset"
+
+    @extend_schema(request=RecuperarSenhaSerializer, responses={200: None})
+    def post(self, request):
+        serializer = RecuperarSenhaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        usuario_model = get_user_model()
+        usuario = usuario_model.objects.filter(
+            email=serializer.validated_data["email"], is_active=True
+        ).first()
+        if usuario:
+            uid = urlsafe_base64_encode(force_bytes(usuario.pk))
+            token = default_token_generator.make_token(usuario)
+            url = (
+                f"{settings.FRONTEND_URL.rstrip('/')}/redefinir-senha/"
+                f"{uid}/{token}"
+            )
+            send_mail(
+                "Redefinição de senha | CultHub",
+                f"Olá, {usuario.nome}.\n\nUse este link para criar uma nova "
+                f"senha:\n{url}\n\n"
+                "Se você não pediu a redefinição, ignore este e-mail.",
+                settings.DEFAULT_FROM_EMAIL,
+                [usuario.email],
+                fail_silently=True,
+            )
+        return Response(
+            {
+                "detail": (
+                    "Se o e-mail estiver cadastrado, enviaremos um link "
+                    "de recuperação."
+                )
+            }
+        )
+
+
+class RedefinirSenhaView(APIView):
+    """Valida o token e atualiza a senha.
+
+    O token deixa de valer depois do uso.
+    """
+
+    permission_classes = (AllowAny,)
+
+    @extend_schema(request=RedefinirSenhaSerializer, responses={200: None})
+    def post(self, request):
+        serializer = RedefinirSenhaSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        usuario_model = get_user_model()
+        try:
+            uid = force_str(
+                urlsafe_base64_decode(serializer.validated_data["uid"])
+            )
+            usuario = usuario_model.objects.get(pk=uid, is_active=True)
+        except (
+            TypeError,
+            ValueError,
+            OverflowError,
+            usuario_model.DoesNotExist,
+        ):
+            usuario = None
+        if usuario is None or not default_token_generator.check_token(
+            usuario, serializer.validated_data["token"]
+        ):
+            return Response(
+                {
+                    "detail": (
+                        "Este link de recuperação é inválido ou expirou."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        usuario.set_password(serializer.validated_data["senha"])
+        usuario.save(update_fields=["password"])
+        return Response({"detail": "Senha redefinida com sucesso."})
 
 
 class SairView(APIView):
