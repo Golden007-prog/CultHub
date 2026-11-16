@@ -80,7 +80,7 @@ class RecuperarSenhaView(APIView):
 
     permission_classes = (AllowAny,)
     throttle_classes = (ScopedRateThrottle,)
-    throttle_scope = "password_reset"
+    throttle_scope = "recuperacao_senha"
 
     @extend_schema(request=RecuperarSenhaSerializer, responses={200: None})
     def post(self, request):

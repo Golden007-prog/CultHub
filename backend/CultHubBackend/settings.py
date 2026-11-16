@@ -154,7 +154,7 @@ REST_FRAMEWORK = {
     "DEFAULT_THROTTLE_RATES": {
         "endereco": "60/min",
         "rota": "30/min",
-        "password_reset": "5/hour",
+        "recuperacao_senha": "5/hour",
     },
     # IP do throttle = o da conexão, nunca o X-Forwarded-For (o cliente
     # poderia inventar um a cada pedido). Atrás de proxy reverso, usar o

@@ -20,12 +20,7 @@ export default function ResetPassword() {
   return (
     <>
       <BackLink to={paths.signIn}>Voltar para entrar</BackLink>
-      <Surface
-        as="section"
-        aria-labelledby="nova-senha-titulo"
-        padded={false}
-        className="mx-auto mt-8 max-w-lg p-7"
-      >
+      <Surface as="section" aria-labelledby="nova-senha-titulo" className="mx-auto mt-8 max-w-lg p-7">
         <h1 id="nova-senha-titulo" className="text-2xl">
           Crie uma nova senha
         </h1>

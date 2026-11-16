@@ -19,12 +19,7 @@ export default function RecoverPassword() {
   return (
     <>
       <BackLink to={paths.signIn}>Voltar para entrar</BackLink>
-      <Surface
-        as="section"
-        aria-labelledby="recuperar-titulo"
-        padded={false}
-        className="mx-auto mt-8 max-w-lg p-7"
-      >
+      <Surface as="section" aria-labelledby="recuperar-titulo" className="mx-auto mt-8 max-w-lg p-7">
         <h1 id="recuperar-titulo" className="text-2xl">
           Esqueceu sua senha?
         </h1>
