@@ -40,6 +40,7 @@ export default function WeatherCard({ event }: Readonly<{ event: CultEvent }>) {
         <WeatherIcon weather={weather} className="size-19" />
         <div>
           <p className="text-4xl font-semibold tracking-tighter text-foreground">{weather.temperature}</p>
+          <p className="font-semibold text-foreground">{weather.condition}</p>
           <p className="text-xs text-muted-foreground">
             {event.schedule} • {event.venue}
           </p>
