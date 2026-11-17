@@ -102,9 +102,7 @@ class MarcarNotificacaoLidaView(APIView):
 @extend_schema(
     request=None,
     responses={
-        204: OpenApiResponse(
-            description="Notificações marcadas como lidas."
-        )
+        204: OpenApiResponse(description="Notificações marcadas como lidas.")
     },
 )
 class MarcarTodasLidasView(APIView):

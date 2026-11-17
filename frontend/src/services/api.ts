@@ -109,9 +109,10 @@ async function apiRequest<T>(path: string, method: Method = 'GET', body?: object
 
 function notifyNotificationsChanged(eventId: string) {
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(
-      new CustomEvent('culthub:notifications-updated', { detail: { eventId } }),
-    )
+    const notificationEvent = new CustomEvent('culthub:notifications-updated', {
+      detail: { eventId },
+    })
+    window.dispatchEvent(notificationEvent)
   }
 }
 
@@ -174,8 +175,7 @@ export const api = {
 
   notifications: {
     list: () => apiRequest<NotificationsResponse>('/eu/notificacoes/'),
-    markRead: (id: string) =>
-      apiRequest<void>(`/notificacoes/${encodeURIComponent(id)}/ler/`, 'PATCH'),
+    markRead: (id: string) => apiRequest<void>(`/notificacoes/${encodeURIComponent(id)}/ler/`, 'PATCH'),
     markAllRead: () => apiRequest<void>('/eu/notificacoes/ler-todas/', 'POST'),
   },
 

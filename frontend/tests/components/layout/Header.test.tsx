@@ -42,9 +42,7 @@ describe('Header', () => {
     })
     renderWithRouter(<Header />)
 
-    expect(
-      await screen.findByRole('button', { name: 'Notificações, 1 não lidas' }),
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Notificações, 1 não lidas' })).toBeInTheDocument()
     expect(list).toHaveBeenCalledOnce()
     expect(screen.queryByRole('dialog', { name: 'Notificações' })).not.toBeInTheDocument()
   })

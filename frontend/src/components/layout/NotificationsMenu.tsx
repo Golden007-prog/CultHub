@@ -91,9 +91,7 @@ export default function NotificationsMenu() {
       await api.notifications.markRead(id)
       setNotifications((current) =>
         current.map((notification) =>
-          notification.id === id
-            ? { ...notification, lida_em: new Date().toISOString() }
-            : notification,
+          notification.id === id ? { ...notification, lida_em: new Date().toISOString() } : notification,
         ),
       )
       setUnreadCount((current) => Math.max(0, current - 1))
@@ -190,7 +188,10 @@ export default function NotificationsMenu() {
                     <span className="flex items-start justify-between gap-3">
                       <strong className="text-sm leading-snug">{notification.titulo_evento}</strong>
                       {!notification.lida_em && (
-                        <span className="mt-1.5 size-2 shrink-0 rounded-full bg-maroon" aria-label="Não lida" />
+                        <span
+                          className="mt-1.5 size-2 shrink-0 rounded-full bg-maroon"
+                          aria-label="Não lida"
+                        />
                       )}
                     </span>
                     <span className="mt-1 block text-xs text-muted-foreground">
