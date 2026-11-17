@@ -1,8 +1,6 @@
 import type { ApiEvent, Paginated } from '@/services/catalog'
 import type { CategoryId } from '@/types'
 
-// A conta usa as APIs reais; os demais fluxos ainda são simulados abaixo.
-
 type Method = 'GET' | 'POST' | 'PATCH' | 'DELETE'
 
 export interface ProfileResponse {
@@ -13,6 +11,32 @@ export interface ProfileResponse {
   bairro: string
   preferencias: CategoryId[]
   iniciais: string
+}
+
+export interface ApiComment {
+  id: string
+  evento: string
+  resposta_a: string | null
+  nivel: number
+  /** null quando o comentário foi removido. */
+  autor: { id: string; nome: string; iniciais: string } | null
+  texto: string | null
+  criado_em: string
+  editado_em: string | null
+  removido: boolean
+  /** Escrito pelo usuário logado (e não removido). */
+  meu: boolean
+  respostas: ApiComment[]
+}
+
+export interface ApiMyComment {
+  id: string
+  evento: { id: string; titulo: string }
+  resposta_a: string | null
+  nivel: number
+  texto: string
+  criado_em: string
+  editado_em: string | null
 }
 
 export class ApiError extends Error {
@@ -73,13 +97,6 @@ function listPath(path: string, filters: Record<string, string>, page: number): 
   const params = new URLSearchParams(filters)
   if (page > 1) params.set('page', String(page))
   return params.size ? `${path}?${params.toString()}` : path
-}
-
-// Mock: só registra a chamada. Devolve uma Promise para manter a mesma assinatura do fetch real.
-function request(method: Method, path: string, body?: Record<string, unknown>): Promise<void> {
-  const safeBody = body && 'senha' in body ? { ...body, senha: '***' } : body
-  console.info(`[CultHub API mock] ${method} /api${path}`, safeBody ?? '')
-  return Promise.resolve()
 }
 
 export const api = {
@@ -144,14 +161,23 @@ export const api = {
       apiRequest<void>(`/eventos/${encodeURIComponent(eventId)}/presenca/`, 'DELETE'),
   },
 
-  /** Provisório */
   comments: {
+    /** Comentários do evento, do mais recente, com as respostas aninhadas. */
+    list: (eventId: string, page = 1) =>
+      apiRequest<Paginated<ApiComment>>(
+        listPath(`/eventos/${encodeURIComponent(eventId)}/comentarios/`, {}, page),
+      ),
     create: (eventId: string, text: string) =>
-      request('POST', `/eventos/${encodeURIComponent(eventId)}/comentarios/`, { texto: text }),
+      apiRequest<ApiComment>(`/eventos/${encodeURIComponent(eventId)}/comentarios/`, 'POST', { texto: text }),
     reply: (commentId: string, text: string) =>
-      request('POST', `/comentarios/${encodeURIComponent(commentId)}/respostas/`, { texto: text }),
+      apiRequest<ApiComment>(`/comentarios/${encodeURIComponent(commentId)}/respostas/`, 'POST', {
+        texto: text,
+      }),
     update: (commentId: string, text: string) =>
-      request('PATCH', `/comentarios/${encodeURIComponent(commentId)}/`, { texto: text }),
-    remove: (commentId: string) => request('DELETE', `/comentarios/${encodeURIComponent(commentId)}/`),
+      apiRequest<ApiComment>(`/comentarios/${encodeURIComponent(commentId)}/`, 'PATCH', { texto: text }),
+    remove: (commentId: string) =>
+      apiRequest<void>(`/comentarios/${encodeURIComponent(commentId)}/`, 'DELETE'),
+    /** Comentários e respostas do usuário logado, do mais recente. */
+    mine: (page = 1) => apiRequest<Paginated<ApiMyComment>>(listPath('/eu/comentarios/', {}, page)),
   },
 }
