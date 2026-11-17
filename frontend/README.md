@@ -35,7 +35,7 @@ src/
 ├── types/           tipos compartilhados (CultEvent, User, CategoryId...)
 ├── hooks/           leitura de dados (useEvents, useCurrentUser...), useActiveSection e useDocumentTitle
 ├── lib/             rotas (paths), filtros, cn() e outras funções auxiliares
-└── services/        catalog.ts: cliente e adaptadores da API de catálogo; api.ts: ações ainda demonstrativas
+└── services/        catalog.ts: cliente e adaptadores do catálogo; api.ts: conta, agenda e notificações
 
 tests/               testes, organizados nas mesmas pastas do src/ (além de setup.ts e do helper render.tsx)
 ```
@@ -81,6 +81,18 @@ As URLs são definidas apenas em `src/lib/paths.ts`. Nos links, use `paths` em v
 ```
 
 Eventos retornados pelo catálogo têm páginas de detalhes. Os dados de exemplo continuam sendo usados nas áreas ainda não conectadas, como perfil salvo e clima.
+
+## Notificações
+
+O sino aparece para quem está logado e lista lembretes de eventos salvos ou com presença confirmada que começam nas próximas 24 horas. A primeira abertura consulta a API, que cria no banco um lembrete único por pessoa e evento. Os lembretes podem ser marcados como lidos individualmente ou todos de uma vez.
+
+```text
+GET   /api/eu/notificacoes/
+PATCH /api/notificacoes/{id}/ler/
+POST  /api/eu/notificacoes/ler-todas/
+```
+
+Os lembretes são gerados quando a lista é consultada; não há envio por e-mail ou execução agendada nesta versão.
 
 ## Rota até o evento
 
