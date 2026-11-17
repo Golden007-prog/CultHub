@@ -59,7 +59,20 @@ export default function NotificationsMenu() {
   }, [])
 
   useEffect(() => {
-    void load(undefined, false)
+    let active = true
+
+    async function loadInitialNotifications() {
+      try {
+        const response = await api.notifications.list()
+        if (!active) return
+        setNotifications(response.resultados)
+        setUnreadCount(response.nao_lidas)
+      } catch (cause) {
+        if (active) setError(errorMessage(cause))
+      }
+    }
+
+    void loadInitialNotifications()
 
     function handleNotificationsChanged(event: Event) {
       const { eventId } = (event as CustomEvent<{ eventId: string }>).detail
@@ -67,8 +80,10 @@ export default function NotificationsMenu() {
     }
 
     window.addEventListener('culthub:notifications-updated', handleNotificationsChanged)
-    return () =>
+    return () => {
+      active = false
       window.removeEventListener('culthub:notifications-updated', handleNotificationsChanged)
+    }
   }, [load])
 
   async function markRead(id: string) {

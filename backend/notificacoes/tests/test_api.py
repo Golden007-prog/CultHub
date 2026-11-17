@@ -29,13 +29,19 @@ class NotificacoesApiTests(APITestCase):
         )
 
     @patch("notificacoes.views.timezone.now")
-    def test_lista_cria_lembretes_para_salvos_e_presencas_proximos(self, agora):
+    def test_lista_cria_lembretes_para_salvos_e_presencas_proximos(
+        self, agora
+    ):
         agora.return_value = self.agora
         salvo = self.criar_evento_em(2, "Evento salvo")
         confirmado = self.criar_evento_em(3, "Evento confirmado")
-        salvo_e_confirmado = self.criar_evento_em(4, "Evento salvo e confirmado")
+        salvo_e_confirmado = self.criar_evento_em(
+            4, "Evento salvo e confirmado"
+        )
         InteresseEmEvento.objects.create(usuario=self.usuario, evento=salvo)
-        PresencaEmEvento.objects.create(usuario=self.usuario, evento=confirmado)
+        PresencaEmEvento.objects.create(
+            usuario=self.usuario, evento=confirmado
+        )
         InteresseEmEvento.objects.create(
             usuario=self.usuario, evento=salvo_e_confirmado
         )
@@ -51,10 +57,15 @@ class NotificacoesApiTests(APITestCase):
             {item["titulo_evento"] for item in resposta.json()["resultados"]},
             {"Evento salvo", "Evento confirmado", "Evento salvo e confirmado"},
         )
-        self.assertEqual(Notificacao.objects.filter(usuario=self.usuario).count(), 3)
+        notificacoes_criadas = Notificacao.objects.filter(
+            usuario=self.usuario
+        ).count()
+        self.assertEqual(notificacoes_criadas, 3)
 
     @patch("notificacoes.views.timezone.now")
-    def test_lista_ignora_eventos_fora_da_janela_passados_ou_removidos(self, agora):
+    def test_lista_ignora_eventos_fora_da_janela_passados_ou_removidos(
+        self, agora
+    ):
         agora.return_value = self.agora
         elegivel = self.criar_evento_em(1, "Elegível")
         distante = self.criar_evento_em(25, "Distante")
@@ -63,7 +74,9 @@ class NotificacoesApiTests(APITestCase):
         removido.removido_em = self.agora
         removido.save(update_fields=["removido_em"])
         for evento in (elegivel, distante, passado, removido):
-            InteresseEmEvento.objects.create(usuario=self.usuario, evento=evento)
+            InteresseEmEvento.objects.create(
+                usuario=self.usuario, evento=evento
+            )
 
         resposta = self.client.get(self.url_lista)
 
@@ -88,7 +101,8 @@ class NotificacoesApiTests(APITestCase):
         self.assertEqual(resposta_leitura.status_code, 204)
         self.assertEqual(segunda_resposta.json()["nao_lidas"], 0)
         self.assertEqual(len(segunda_resposta.json()["resultados"]), 1)
-        self.assertIsNotNone(segunda_resposta.json()["resultados"][0]["lida_em"])
+        lida_em = segunda_resposta.json()["resultados"][0]["lida_em"]
+        self.assertIsNotNone(lida_em)
 
     def test_usuario_sem_login_nao_consulta_notificacoes(self):
         self.client.logout()
