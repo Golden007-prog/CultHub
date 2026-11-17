@@ -93,6 +93,18 @@ describe('api', () => {
     ])
   })
 
+  it('consulta notificações e marca uma ou todas como lidas', async () => {
+    await api.notifications.list()
+    await api.notifications.markRead('notificacao/42')
+    await api.notifications.markAllRead()
+
+    expect(fetchMock.mock.calls.map(([url, options]) => [url, (options as RequestInit).method])).toEqual([
+      ['/api/eu/notificacoes/', 'GET'],
+      ['/api/notificacoes/notificacao%2F42/ler/', 'PATCH'],
+      ['/api/eu/notificacoes/ler-todas/', 'POST'],
+    ])
+  })
+
   it('não atualiza as notificações quando salvar o evento falha', async () => {
     const dispatchEvent = vi.spyOn(window, 'dispatchEvent')
     fetchMock.mockResolvedValueOnce(

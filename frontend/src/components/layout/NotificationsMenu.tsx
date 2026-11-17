@@ -17,11 +17,9 @@ function dateLabel(notification: ApiNotification): string {
     first.getFullYear() === second.getFullYear() &&
     first.getMonth() === second.getMonth() &&
     first.getDate() === second.getDate()
-  const label = sameDay(date, today)
-    ? 'Hoje'
-    : sameDay(date, tomorrow)
-      ? 'Amanhã'
-      : new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short' }).format(date)
+  let label = new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'short' }).format(date)
+  if (sameDay(date, today)) label = 'Hoje'
+  else if (sameDay(date, tomorrow)) label = 'Amanhã'
   return notification.hora_inicio ? `${label} às ${notification.hora_inicio.slice(0, 5)}` : label
 }
 
