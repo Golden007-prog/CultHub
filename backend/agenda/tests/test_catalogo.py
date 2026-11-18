@@ -36,7 +36,10 @@ class CatalogoComMarcacoesTest(APITestCase):
         InteresseEmEvento.objects.create(usuario=self.ana, evento=evento)
         PresencaEmEvento.objects.create(usuario=self.ana, evento=evento)
         self.client.force_login(self.ana)
-        corpo = self.detalhe(evento).json()
+        with self.assertNumQueries(6):
+            resposta = self.detalhe(evento)
+        self.assertEqual(resposta.status_code, 200)
+        corpo = resposta.json()
         self.assertIs(corpo["salvo"], True)
         self.assertIs(corpo["presenca"], True)
         self.assertEqual(corpo["total_presencas"], 1)

@@ -71,6 +71,22 @@ class SalvosTest(ListasBase):
         item = self.client.get(reverse("eu-salvos")).json()["results"][0]
         self.assertTrue(item["removido"])
 
+    def test_marcacoes_ausentes_tem_data_nula(self):
+        evento = criar_evento(data_inicio=self.dia(1))
+        self.salvar(evento)
+        outro = criar_evento(data_inicio=self.dia(1))
+        self.presenca(outro)
+
+        salvo = self.client.get(reverse("eu-salvos")).json()["results"][0]
+        presente = self.client.get(
+            reverse("eu-presencas"), {"quando": "futuras"}
+        ).json()["results"][0]
+
+        self.assertIs(salvo["presenca"], False)
+        self.assertIsNone(salvo["presenca_em"])
+        self.assertIs(presente["salvo"], False)
+        self.assertIsNone(presente["salvo_em"])
+
 
 class PrivacidadeTest(ListasBase):
     def test_listas_nao_mostram_marcacoes_de_outro_usuario(self):
@@ -96,6 +112,23 @@ class PrivacidadeTest(ListasBase):
 
 
 class PresencasTest(ListasBase):
+    def test_presencas_inclui_removido(self):
+        evento = criar_evento(
+            titulo="Evento removido",
+            data_inicio=self.dia(1),
+            removido_em=timezone.now(),
+        )
+        self.presenca(evento)
+
+        resposta = self.client.get(
+            reverse("eu-presencas"), {"quando": "futuras"}
+        )
+
+        self.assertEqual(resposta.status_code, 200)
+        itens = resposta.json()["results"]
+        self.assertEqual([item["titulo"] for item in itens], [evento.titulo])
+        self.assertIs(itens[0]["removido"], True)
+
     def test_presencas_futuras_e_passadas(self):
         ontem = criar_evento(titulo="ontem", data_inicio=self.dia(-1))
         amanha = criar_evento(titulo="amanhã", data_inicio=self.dia(1))
@@ -175,6 +208,16 @@ class AgendaTest(ListasBase):
         )
         self.salvar(evento)
         self.assertEqual(self.agenda(de=self.dia(0)), ["cruza"])
+
+    def test_agenda_inclui_evento_que_termina_no_primeiro_dia(self):
+        evento = criar_evento(
+            titulo="Termina no primeiro dia",
+            data_inicio=self.dia(-3),
+            data_fim=self.dia(0),
+        )
+        self.presenca(evento)
+
+        self.assertEqual(self.agenda(de=self.dia(0)), [evento.titulo])
 
     def test_agenda_exclui_fora_do_periodo(self):
         antes = criar_evento(titulo="antes", data_inicio=self.dia(-5))

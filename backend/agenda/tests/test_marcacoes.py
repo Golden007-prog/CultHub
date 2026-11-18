@@ -108,6 +108,18 @@ class MarcacaoBase:
         self.assertEqual(resposta.status_code, 403)
         self.assertEqual(self.modelo.objects.count(), 0)
 
+    def test_delete_sem_csrf_recusado(self):
+        marca = self.modelo.objects.create(
+            usuario=self.usuario, evento=self.evento
+        )
+        cliente = APIClient(enforce_csrf_checks=True)
+        cliente.force_login(self.usuario)
+
+        resposta = cliente.delete(self.url())
+
+        self.assertEqual(resposta.status_code, 403)
+        self.assertTrue(self.modelo.objects.filter(pk=marca.pk).exists())
+
 
 class SalvarEventoTests(MarcacaoBase, APITestCase):
     rota = "evento-salvar"

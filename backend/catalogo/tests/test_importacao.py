@@ -839,20 +839,25 @@ class ComandoTest(TestCase):
         )
 
     def test_busca_desde_o_comeco_do_dia_em_sp(self):
-        # 22:00 de 28/10 em SP, já 29/10 em UTC.
-        agora = datetime(2026, 10, 29, 1, 0, tzinfo=UTC)
-        with (
-            patch("django.utils.timezone.now", return_value=agora),
-            patch(
-                "catalogo.ticketmaster.buscar_pagina",
-                return_value=_pagina(0, 1, []),
-            ) as buscar,
-        ):
-            call_command("importar_ticketmaster", stdout=StringIO())
-        self.assertEqual(
-            buscar.call_args.args[1],
-            datetime(2026, 10, 28, 3, 0, tzinfo=UTC),
+        casos = (
+            (datetime(2026, 10, 29, 0, 0, tzinfo=UTC), 28),  # 21:00 em SP
+            (datetime(2026, 10, 29, 2, 59, tzinfo=UTC), 28),  # 23:59 em SP
+            (datetime(2026, 10, 29, 3, 0, tzinfo=UTC), 29),  # 00:00 em SP
         )
+        for agora, dia in casos:
+            with (
+                self.subTest(agora=agora),
+                patch("django.utils.timezone.now", return_value=agora),
+                patch(
+                    "catalogo.ticketmaster.buscar_pagina",
+                    return_value=_pagina(0, 1, []),
+                ) as buscar,
+            ):
+                call_command("importar_ticketmaster", stdout=StringIO())
+                self.assertEqual(
+                    buscar.call_args.args[1],
+                    datetime(2026, 10, dia, 3, 0, tzinfo=UTC),
+                )
 
     @patch("catalogo.ticketmaster.time.sleep")
     def test_zero_eventos_nao_remove_nada(self, _sleep):
