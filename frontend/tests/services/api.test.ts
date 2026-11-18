@@ -77,6 +77,48 @@ describe('api', () => {
     ])
   })
 
+  it('atualiza as notificações após salvar ou confirmar presença', async () => {
+    const dispatchEvent = vi.spyOn(window, 'dispatchEvent')
+
+    await api.events.save('evento-salvo')
+    await api.events.attend('evento-confirmado')
+
+    const events = dispatchEvent.mock.calls
+      .map(([event]) => event)
+      .filter((event) => event.type === 'culthub:notifications-updated') as CustomEvent[]
+    expect(events).toHaveLength(2)
+    expect(events.map((event) => event.detail)).toEqual([
+      { eventId: 'evento-salvo' },
+      { eventId: 'evento-confirmado' },
+    ])
+  })
+
+  it('consulta notificações e marca uma ou todas como lidas', async () => {
+    await api.notifications.list()
+    await api.notifications.markRead('notificacao/42')
+    await api.notifications.markAllRead()
+
+    expect(fetchMock.mock.calls.map(([url, options]) => [url, (options as RequestInit).method])).toEqual([
+      ['/api/eu/notificacoes/', 'GET'],
+      ['/api/notificacoes/notificacao%2F42/ler/', 'PATCH'],
+      ['/api/eu/notificacoes/ler-todas/', 'POST'],
+    ])
+  })
+
+  it('não atualiza as notificações quando salvar o evento falha', async () => {
+    const dispatchEvent = vi.spyOn(window, 'dispatchEvent')
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify({ detail: 'Falha.' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    )
+
+    await expect(api.events.save('evento')).rejects.toThrow('Falha.')
+
+    expect(dispatchEvent).not.toHaveBeenCalled()
+  })
+
   it('usa as rotas de comentários, respostas e da lista do usuário', async () => {
     await api.comments.list('evento/42')
     await api.comments.list('evento/42', 2)

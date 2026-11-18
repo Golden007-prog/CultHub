@@ -39,6 +39,22 @@ export interface ApiMyComment {
   editado_em: string | null
 }
 
+export interface ApiNotification {
+  id: string
+  evento_id: string
+  titulo_evento: string
+  data_inicio: string
+  hora_inicio: string | null
+  local: string
+  criada_em: string
+  lida_em: string | null
+}
+
+export interface NotificationsResponse {
+  nao_lidas: number
+  resultados: ApiNotification[]
+}
+
 export class ApiError extends Error {
   readonly status: number
 
@@ -89,6 +105,15 @@ async function apiRequest<T>(path: string, method: Method = 'GET', body?: object
   const data: unknown = response.status === 204 ? undefined : await response.json().catch(() => undefined)
   if (!response.ok) throw new ApiError(errorMessage(data), response.status)
   return data as T
+}
+
+function notifyNotificationsChanged(eventId: string) {
+  if (typeof window !== 'undefined') {
+    const notificationEvent = new CustomEvent('culthub:notifications-updated', {
+      detail: { eventId },
+    })
+    window.dispatchEvent(notificationEvent)
+  }
 }
 
 export type AttendanceWhen = 'futuras' | 'passadas'
@@ -148,14 +173,22 @@ export const api = {
       apiRequest<Paginated<ApiEvent>>(listPath('/eu/agenda/', { de: from, ate: to }, page)),
   },
 
+  notifications: {
+    list: () => apiRequest<NotificationsResponse>('/eu/notificacoes/'),
+    markRead: (id: string) => apiRequest<void>(`/notificacoes/${encodeURIComponent(id)}/ler/`, 'PATCH'),
+    markAllRead: () => apiRequest<void>('/eu/notificacoes/ler-todas/', 'POST'),
+  },
+
   events: {
     save: async (eventId: string) => {
       await apiRequest<void>(`/eventos/${encodeURIComponent(eventId)}/salvar/`, 'POST')
+      notifyNotificationsChanged(eventId)
     },
     unsave: (eventId: string) =>
       apiRequest<void>(`/eventos/${encodeURIComponent(eventId)}/salvar/`, 'DELETE'),
     attend: async (eventId: string) => {
       await apiRequest<void>(`/eventos/${encodeURIComponent(eventId)}/presenca/`, 'POST')
+      notifyNotificationsChanged(eventId)
     },
     unattend: (eventId: string) =>
       apiRequest<void>(`/eventos/${encodeURIComponent(eventId)}/presenca/`, 'DELETE'),
